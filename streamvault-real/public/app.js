@@ -1,4 +1,4 @@
-var isAdmin = true; // Always true in static client mode for easy management
+var isAdmin = true;
 
 document.addEventListener("DOMContentLoaded", () => {
   init();
@@ -47,9 +47,8 @@ function startDownload() {
   btn.disabled = true;
   btn.textContent = 'Saving...';
   status.className = 'status-box loading';
-  status.textContent = '⏳ Saving link to archive...';
+  status.textContent = '⏳ Adding video to archive...';
 
-  // Save to localStorage immediately for Cloudflare static hosting
   let localVideos = JSON.parse(localStorage.getItem('streamvault_videos')) || [];
   let newVid = { 
     id: String(Date.now()), 
@@ -62,7 +61,7 @@ function startDownload() {
   localStorage.setItem('streamvault_videos', JSON.stringify(localVideos));
 
   status.className = 'status-box success';
-  status.textContent = '✓ Saved successfully!';
+  status.textContent = '✓ Video added successfully!';
   document.getElementById('videoUrl').value = '';
   loadVideos();
 
@@ -73,28 +72,25 @@ function startDownload() {
 function loadVideos() {
   var gallery = document.getElementById('gallery');
   var countEl = document.getElementById('videoCount');
-  
   var videos = JSON.parse(localStorage.getItem('streamvault_videos')) || [];
-  renderVideoList(videos, gallery, countEl);
-}
-
-function renderVideoList(videos, gallery, countEl) {
+  
   countEl.textContent = videos.length ? '(' + videos.length + ')' : '';
   if (!videos.length) {
     gallery.innerHTML = '<p class="empty">No videos yet. Paste a link above.</p>';
     return;
   }
+
   gallery.innerHTML = videos.map(function(v) {
     return '<div class="video-card">' +
       '<div class="video-thumb" onclick="playVideo(\'' + v.url + '\',\'' + escapeHtml(v.title) + '\')">' +
-        '<div class="no-thumb">▶ Link</div>' +
+        '<div class="no-thumb">▶ Play</div>' +
       '</div>' +
       '<div class="video-info">' +
         '<div class="video-title" title="' + escapeHtml(v.title) + '">' + escapeHtml(v.title) + '</div>' +
         '<div class="video-meta">' + formatSize(v.size) + (v.quality ? ' • ' + v.quality : '') + '</div>' +
         '<div class="video-actions">' +
-          '<button onclick="openExternal(\'' + v.url + '\')">Open / Watch</button>' +
-          '<a href="' + v.url + '" target="_blank">Source</a>' +
+          '<button onclick="playVideo(\'' + v.url + '\',\'' + escapeHtml(v.title) + '\')">Play</button>' +
+          '<a href="' + v.url + '" target="_blank" download>Source</a>' +
           '<button class="delete-btn" onclick="deleteVideo(\'' + v.id + '\')">Delete</button>' +
         '</div></div></div>';
   }).join('');
@@ -148,15 +144,13 @@ function loadPictures() {
   var gallery = document.getElementById('picGallery');
   var countEl = document.getElementById('picCount');
   var pics = JSON.parse(localStorage.getItem('streamvault_pics')) || [];
-  renderPicList(pics, gallery, countEl);
-}
-
-function renderPicList(pics, gallery, countEl) {
+  
   countEl.textContent = pics.length ? '(' + pics.length + ')' : '';
   if (!pics.length) {
     gallery.innerHTML = '<p class="empty">No pictures yet. Paste an image URL above.</p>';
     return;
   }
+
   gallery.innerHTML = pics.map(function(p) {
     return '<div class="video-card">' +
       '<div class="video-thumb" onclick="viewImage(\'' + p.url + '\',\'' + escapeHtml(p.title) + '\')">' +
@@ -181,17 +175,61 @@ function deletePicture(id) {
   loadPictures();
 }
 
-function openExternal(url) {
-  window.open(url, '_blank');
+// Extract YouTube ID and open inside website modal with a download option
+function playVideo(url, title) {
+  let videoId = extractYouTubeId(url);
+  
+  let modal = document.getElementById('playerModal');
+  let titleEl = document.getElementById('playerTitle');
+  let bodyContainer = modal.querySelector('.modal-body') || modal;
+
+  if (titleEl) titleEl.textContent = title;
+
+  // Create or update embedded player content inside your existing modal
+  let playerContent = document.getElementById('embedded-player-container');
+  if (!playerContent) {
+    playerContent = document.createElement('div');
+    playerContent.id = 'embedded-player-container';
+    modal.appendChild(playerContent);
+  }
+
+  if (videoId) {
+    playerContent.innerHTML = `
+      <div style="position: relative; width: 100%; padding-bottom: 56.25%; margin-bottom: 15px;">
+        <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" 
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 8px;" 
+                allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+      <div style="text-align: center;">
+        <a href="${url}" target="_blank" download style="display: inline-block; background: #6366f1; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+          📥 Download / Open Direct File
+        </a>
+      </div>
+    `;
+  } else {
+    playerContent.innerHTML = `
+      <p style="color: white; text-align: center; margin-bottom: 15px;">Direct stream playback:</p>
+      <video id="player" controls autoplay style="width: 100%; max-height: 400px; border-radius: 8px;" src="${url}"></video>
+      <div style="text-align: center; margin-top: 15px;">
+        <a href="${url}" target="_blank" download style="display: inline-block; background: #6366f1; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+          📥 Download Video File
+        </a>
+      </div>
+    `;
+  }
+
+  modal.classList.add('open');
 }
 
-function playVideo(url, title) {
-  window.open(url, '_blank');
+function extractYouTubeId(url) {
+  var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  var match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
 }
 
 function closePlayer(e) {
-  var player = document.getElementById('player');
-  if (player) { player.pause(); player.src = ''; }
+  var playerContent = document.getElementById('embedded-player-container');
+  if (playerContent) playerContent.innerHTML = ''; // Stops video audio instantly
   var modal = document.getElementById('playerModal');
   if (modal) modal.classList.remove('open');
 }
