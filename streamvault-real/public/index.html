@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamVault</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo neon-text">StreamVault</div>
+      <div class="header-right">
+        <span id="userEmail" class="user-email"></span>
+        <span class="role-badge admin">ADMIN</span>
+        <div class="server-status">
+          <span class="dot"></span>
+          <span id="serverName">Local Server</span>
+        </div>
+        <a href="/logout" class="btn-small">Logout</a>
+      </div>
+    </header>
+
+    <main>
+      <div class="tabs">
+        <button class="tab active" data-tab="videos" onclick="switchTab('videos')">Videos</button>
+        <button class="tab" data-tab="pictures" onclick="switchTab('pictures')">Pictures</button>
+      </div>
+
+      <section class="card neon-box">
+        <h2>Connect Server</h2>
+        <div class="server-buttons">
+          <button class="server-btn active" data-server="local" onclick="connectServer('local')">💻 Local PC</button>
+          <button class="server-btn" data-server="cloudflare" onclick="connectServer('cloudflare')">☁️ Cloudflare</button>
+        </div>
+        <p id="connectMsg" class="connect-msg"></p>
+      </section>
+
+      <!-- VIDEOS -->
+      <div id="tab-videos">
+        <section class="card neon-box">
+          <h2>Download Video <span class="admin-tag">ADMIN</span></h2>
+          <p class="hint">Works with YouTube, Instagram, TikTok, X, Facebook, Reddit, Vimeo and 1000+ sites. Choose quality.</p>
+          <div class="download-row">
+            <input type="text" id="videoUrl" placeholder="Paste any video link (YouTube, Instagram, TikTok...)">
+            <select id="quality">
+              <option value="best">Best</option>
+              <option value="4k">4K</option>
+              <option value="1080p">1080p</option>
+              <option value="720p">720p</option>
+              <option value="480p">480p</option>
+              <option value="360p">360p</option>
+              <option value="audio">Audio only</option>
+            </select>
+            <button class="btn neon-btn" id="downloadBtn" onclick="startDownload()">Download</button>
+          </div>
+          <div id="downloadStatus" class="status-box"></div>
+        </section>
+
+        <section class="card neon-box">
+          <h2>My Videos <span id="videoCount" class="count"></span></h2>
+          <div id="gallery" class="gallery"><p class="empty">No videos yet.</p></div>
+        </section>
+      </div>
+
+      <!-- PICTURES -->
+      <div id="tab-pictures" style="display:none;">
+        <section class="card neon-box">
+          <h2>Save Picture <span class="admin-tag">ADMIN</span></h2>
+          <p class="hint">Right-click any image → Copy image address → paste here</p>
+          <div class="download-row">
+            <input type="text" id="picUrl" placeholder="https://... image URL">
+            <input type="text" id="picTitle" placeholder="Optional title" style="max-width:160px;">
+            <button class="btn neon-btn" id="savePicBtn" onclick="savePicture()">Save Pic</button>
+          </div>
+          <div id="picStatus" class="status-box"></div>
+        </section>
+
+        <section class="card neon-box">
+          <h2>My Pictures <span id="picCount" class="count"></span></h2>
+          <div id="picGallery" class="gallery"><p class="empty">No pictures yet.</p></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="playerModal" class="modal" onclick="closePlayer(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <button class="close-btn" onclick="closePlayer()">&times;</button>
+      <h3 id="playerTitle"></h3>
+      <video id="player" controls autoplay></video>
+    </div>
+  </div>
+
+  <div id="imgModal" class="modal" onclick="closeImg(event)">
+    <div class="modal-content img-modal" onclick="event.stopPropagation()">
+      <button class="close-btn" onclick="closeImg()">&times;</button>
+      <h3 id="imgTitle"></h3>
+      <img id="imgViewer" src="" alt="preview">
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
